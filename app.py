@@ -3,6 +3,7 @@ import random
 import importlib
 import copy
 from datetime import datetime, timedelta
+import pytz
 
 # Optional smooth 1s timer updates
 try:
@@ -10,6 +11,9 @@ try:
     AUTOR = True
 except Exception:
     AUTOR = False
+
+# Set your local timezone here
+TZ = pytz.timezone("Asia/Kolkata")  # Change to your timezone
 
 # -------------------- PAGE CONFIG --------------------
 st.set_page_config(page_title="Databricks Certification Practice Quizzes", layout="wide", page_icon="🧪")
@@ -142,7 +146,7 @@ def shuffle_quiz(quiz):
 
 def init_state(quiz, duration_min=DEFAULT_DURATION_MIN):
     st.session_state.quiz_data = quiz
-    st.session_state.start_time = datetime.now()
+    st.session_state.start_time = datetime.now(TZ)
     st.session_state.end_time = st.session_state.start_time + timedelta(minutes=duration_min)
     st.session_state.current_q = 0
     st.session_state.submitted = False
@@ -150,8 +154,9 @@ def init_state(quiz, duration_min=DEFAULT_DURATION_MIN):
     st.session_state.widget_keys = {i: f"q_{i}_{random.randint(1,10**9)}" for i in range(len(quiz["questions"]))}
 
 def secs_left():
-    if "end_time" not in st.session_state: return 0
-    return max(0, int((st.session_state.end_time - datetime.now()).total_seconds()))
+    if "end_time" not in st.session_state:
+        return 0
+    return max(0, int((st.session_state.end_time - datetime.now(TZ)).total_seconds()))
 
 def fmt_mmss(s):
     m, s = divmod(s, 60)
@@ -170,7 +175,7 @@ def render_navbar():
 
     # live date/time
     if AUTOR: st_autorefresh(interval=1000, key="clock")
-    now = datetime.now()
+    now = datetime.now(TZ)  # Force local time
     date_str = now.strftime("%a, %d %b")
     time_str = now.strftime("%H:%M:%S")
 
@@ -372,8 +377,8 @@ def page_results():
     score = sum(1 for i, q in enumerate(qz["questions"]) if answers.get(i) == q["answer"])
 
     used = min(
-        int((datetime.now()-st.session_state.start_time).total_seconds()),
-        int((st.session_state.end_time-st.session_state.start_time).total_seconds())
+        int((datetime.now(TZ) - st.session_state.start_time).total_seconds()),
+        int((st.session_state.end_time - st.session_state.start_time).total_seconds())
     )
 
     with st.container():
